@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,22 @@ from src.models.user import User
 from src.core.security import verify_access_token
 
 
-security = HTTPBearer()
+class CustomHTTPBearer(HTTPBearer):
+    """HTTPBearer personalizado con mensajes en español."""
+    
+    async def __call__(self, request: Request) -> Optional[HTTPAuthorizationCredentials]:
+        try:
+            credentials = await super().__call__(request)
+            return credentials
+        except HTTPException:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No se proporcionó token de autenticación. Incluya el header 'Authorization: Bearer <token>'",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+
+security = CustomHTTPBearer()
 
 
 def get_current_user(
