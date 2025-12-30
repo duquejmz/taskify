@@ -26,7 +26,9 @@ class PermissionResponse(PermissionBase):
     """Schema para respuesta de permiso."""
     id: UUID
     created_at: datetime
+    created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

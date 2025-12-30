@@ -37,7 +37,7 @@ class UserService:
         """Obtiene un rol por su nombre."""
         return self.db.query(Role).filter(Role.name == role_name).first()
     
-    def create_user(self, user_data: UserCreate, role_id: UUID) -> User:
+    def create_user(self, user_data: UserCreate, role_id: UUID, created_by: UUID) -> User:
         """Crea un nuevo usuario."""
         user = User(
             name=user_data.name,
@@ -46,6 +46,7 @@ class UserService:
             password=hash_password(user_data.password),
             role_id=role_id,
             is_active=True,
+            created_by=str(created_by),
         )
         
         self.db.add(user)
@@ -77,7 +78,7 @@ class UserService:
         
         return users, total
     
-    def update_user(self, user_id: UUID, user_data: UserUpdate) -> Optional[User]:
+    def update_user(self, user_id: UUID, user_data: UserUpdate, updated_by: UUID) -> Optional[User]:
         """Actualiza un usuario existente."""
         user = self.get_user_by_id(user_id)
         
@@ -90,11 +91,12 @@ class UserService:
             if value is not None:
                 setattr(user, field, value)
         
+        user.updated_by = str(updated_by)
         self.db.commit()
         self.db.refresh(user)
         return user
     
-    def deactivate_user(self, user_id: UUID) -> Optional[User]:
+    def deactivate_user(self, user_id: UUID, updated_by: UUID) -> Optional[User]:
         """Desactiva un usuario (soft delete)."""
         user = self.get_user_by_id(user_id)
         
@@ -102,11 +104,12 @@ class UserService:
             return None
         
         user.is_active = False
+        user.updated_by = str(updated_by)
         self.db.commit()
         self.db.refresh(user)
         return user
     
-    def activate_user(self, user_id: UUID) -> Optional[User]:
+    def activate_user(self, user_id: UUID, updated_by: UUID) -> Optional[User]:
         """Reactiva un usuario."""
         user = self.get_user_by_id(user_id)
         
@@ -114,6 +117,7 @@ class UserService:
             return None
         
         user.is_active = True
+        user.updated_by = str(updated_by)
         self.db.commit()
         self.db.refresh(user)
         return user

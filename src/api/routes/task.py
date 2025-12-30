@@ -41,7 +41,7 @@ def create_task(
     """
     task_service = get_task_service(db)
     task = task_service.create_task(task_data, current_user.id)
-    return {"message": "Tarea creada exitosamente", "task": task}
+    return task
 
 
 @router.get(
@@ -137,7 +137,7 @@ def update_task(
             detail="Tarea no encontrada",
         )
     
-    return {"message": "Tarea actualizada exitosamente", "task": task}
+    return task
 
 
 @router.delete(

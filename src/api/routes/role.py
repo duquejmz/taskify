@@ -50,7 +50,7 @@ def create_role(
             detail=f"El rol '{role_data.name}' ya existe",
         )
     
-    role = role_service.create_role(role_data)
+    role = role_service.create_role(role_data, admin_user.id)
     return role
 
 
@@ -147,7 +147,7 @@ def assign_permissions_to_role(
         )
     
     # Asignar permisos
-    updated_role = role_service.assign_permissions_to_role(role_id, permissions)
+    updated_role = role_service.assign_permissions_to_role(role_id, permissions, admin_user.id)
     return updated_role
 
 

@@ -28,7 +28,9 @@ class RoleResponse(RoleBase):
     """Schema para respuesta de rol."""
     id: UUID
     created_at: datetime
+    created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

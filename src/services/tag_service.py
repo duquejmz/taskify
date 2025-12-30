@@ -22,9 +22,9 @@ class TagService:
         """Obtiene un tag por nombre."""
         return self.db.query(Tag).filter(Tag.name == name).first()
     
-    def create_tag(self, tag_data: TagCreate) -> Tag:
+    def create_tag(self, tag_data: TagCreate, created_by: UUID) -> Tag:
         """Crea un nuevo tag."""
-        tag = Tag(name=tag_data.name)
+        tag = Tag(name=tag_data.name, created_by=str(created_by))
         self.db.add(tag)
         self.db.commit()
         self.db.refresh(tag)

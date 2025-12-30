@@ -16,6 +16,19 @@ class TaskService:
     def __init__(self, db: Session):
         self.db = db
     
+    def _get_or_create_tags(self, tag_names: List[str], user_id: UUID) -> List[Tag]:
+        """Obtiene tags existentes o crea nuevos si no existen."""
+        tags = []
+        for name in tag_names:
+            tag = self.db.query(Tag).filter(Tag.name == name).first()
+            if not tag:
+                # Crear tag si no existe
+                tag = Tag(name=name, created_by=str(user_id))
+                self.db.add(tag)
+                self.db.flush()  # Para obtener el ID sin hacer commit
+            tags.append(tag)
+        return tags
+    
     def create_task(self, task_data: TaskCreate, user_id: UUID) -> Task:
         """Crea una nueva tarea."""
         task = Task(
@@ -24,12 +37,12 @@ class TaskService:
             status=TaskStatus(task_data.status.value),
             priority=TaskPriority(task_data.priority.value),
             user_id=user_id,
+            created_by=str(user_id),
         )
         
-        # Agregar tags si se proporcionaron (por nombre)
+        # Agregar tags si se proporcionaron (por nombre), creando si no existen
         if task_data.tag_names:
-            tags = self.db.query(Tag).filter(Tag.name.in_(task_data.tag_names)).all()
-            task.tags = tags
+            task.tags = self._get_or_create_tags(task_data.tag_names, user_id)
         
         self.db.add(task)
         self.db.commit()
@@ -91,8 +104,7 @@ class TaskService:
         
         for field, value in update_data.items():
             if field == "tag_names" and value is not None:
-                tags = self.db.query(Tag).filter(Tag.name.in_(value)).all()
-                task.tags = tags
+                task.tags = self._get_or_create_tags(value, user_id)
             elif field == "status" and value is not None:
                 setattr(task, field, TaskStatus(value))
             elif field == "priority" and value is not None:
@@ -100,6 +112,7 @@ class TaskService:
             elif value is not None:
                 setattr(task, field, value)
         
+        task.updated_by = str(user_id)
         self.db.commit()
         self.db.refresh(task)
         return task

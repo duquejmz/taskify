@@ -62,8 +62,8 @@ def create_user(
             detail=f"El rol '{user_data.role_name}' no existe",
         )
     
-    user = user_service.create_user(user_data, role.id)
-    return {"message": "Usuario creado exitosamente", "user": user}
+    user = user_service.create_user(user_data, role.id, admin_user.id)
+    return user
 
 
 @router.get(
@@ -130,7 +130,7 @@ def deactivate_user(
             detail="No puedes desactivarte a ti mismo",
         )
     
-    user = user_service.deactivate_user(user_id)
+    user = user_service.deactivate_user(user_id, admin_user.id)
     
     if not user:
         raise HTTPException(
@@ -138,7 +138,7 @@ def deactivate_user(
             detail="Usuario no encontrado",
         )
     
-    return {"message": "Usuario desactivado exitosamente", "user": user}
+    return user
 
 
 @router.patch(
@@ -157,7 +157,7 @@ def activate_user(
     """
     user_service = get_user_service(db)
     
-    user = user_service.activate_user(user_id)
+    user = user_service.activate_user(user_id, admin_user.id)
     
     if not user:
         raise HTTPException(
@@ -165,4 +165,4 @@ def activate_user(
             detail="Usuario no encontrado",
         )
     
-    return {"message": "Usuario reactivado exitosamente", "user": user}
+    return user

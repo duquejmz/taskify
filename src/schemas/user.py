@@ -58,10 +58,11 @@ class UserResponse(UserBase):
     """Schema para respuesta de usuario."""
     id: UUID
     is_active: bool
-    role_id: UUID
     role: RoleInfo
     created_at: datetime
+    created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

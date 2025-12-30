@@ -42,8 +42,8 @@ def create_tag(
             detail="El tag ya existe",
         )
     
-    tag = tag_service.create_tag(tag_data)
-    return {"message": "Tag creado exitosamente", "tag": tag}
+    tag = tag_service.create_tag(tag_data, admin_user.id)
+    return tag
 
 
 @router.get(

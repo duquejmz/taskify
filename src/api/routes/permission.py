@@ -42,7 +42,7 @@ def create_permission(
             detail=f"El permiso '{permission_data.name}' ya existe",
         )
     
-    permission = permission_service.create_permission(permission_data)
+    permission = permission_service.create_permission(permission_data, admin_user.id)
     return permission
 
 

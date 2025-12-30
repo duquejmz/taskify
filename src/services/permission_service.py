@@ -21,9 +21,9 @@ class PermissionService:
         """Obtiene un permiso por nombre."""
         return self.db.query(Permission).filter(Permission.name == name).first()
     
-    def create_permission(self, permission_data: PermissionCreate) -> Permission:
+    def create_permission(self, permission_data: PermissionCreate, created_by: UUID) -> Permission:
         """Crea un nuevo permiso."""
-        permission = Permission(name=permission_data.name)
+        permission = Permission(name=permission_data.name, created_by=str(created_by))
         self.db.add(permission)
         self.db.commit()
         self.db.refresh(permission)

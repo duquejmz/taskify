@@ -24,9 +24,9 @@ class RoleService:
         """Obtiene un rol por nombre."""
         return self.db.query(Role).filter(Role.name == name).first()
     
-    def create_role(self, role_data: RoleCreate) -> Role:
+    def create_role(self, role_data: RoleCreate, created_by: UUID) -> Role:
         """Crea un nuevo rol."""
-        role = Role(name=role_data.name)
+        role = Role(name=role_data.name, created_by=str(created_by))
         self.db.add(role)
         self.db.commit()
         self.db.refresh(role)
@@ -39,7 +39,8 @@ class RoleService:
     def assign_permissions_to_role(
         self, 
         role_id: UUID, 
-        permissions: List[Permission]
+        permissions: List[Permission],
+        updated_by: UUID
     ) -> Optional[Role]:
         """Asigna permisos a un rol."""
         role = self.get_role_by_id(role_id)
@@ -47,6 +48,7 @@ class RoleService:
             return None
         
         role.permissions = permissions
+        role.updated_by = str(updated_by)
         self.db.commit()
         self.db.refresh(role)
         return role
