@@ -13,6 +13,22 @@ API REST para gestión de tareas construida con FastAPI, SQLAlchemy y PostgreSQL
 - **JWT (python-jose)** - Autenticación basada en tokens
 - **Pydantic** - Validación de datos
 
+## Variables de Entorno
+
+Crear un archivo `.env` en la raíz del proyecto
+
+## Levantar PostgreSQL con Docker
+
+```bash
+# Iniciar el contenedor de PostgreSQL
+docker-compose up -d
+
+# Verificar que está corriendo
+docker ps
+```
+
+El archivo `docker-compose.yml` configura PostgreSQL con las credenciales definidas en `.env`.
+
 ## Instalación y Ejecución
 
 ### 1. Clonar e instalar dependencias
@@ -59,39 +75,6 @@ La API estará disponible en: http://localhost:8000
 
 - Documentación Swagger: http://localhost:8000/docs
 - Documentación ReDoc: http://localhost:8000/redoc
-
-
-
-## Variables de Entorno
-
-Crear un archivo `.env` en la raíz del proyecto:
-
-```env
-# Base de datos
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=technical_test
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/technical_test
-
-# JWT
-JWT_SECRET_KEY=tu-clave-secreta-muy-segura-cambiar-en-produccion
-JWT_ALGORITHM=HS256
-JWT_EXPIRATION_MINUTES=30
-```
-
-## Levantar PostgreSQL con Docker
-
-```bash
-# Iniciar el contenedor de PostgreSQL
-docker-compose up -d
-
-# Verificar que está corriendo
-docker ps
-```
-
-El archivo `docker-compose.yml` configura PostgreSQL con las credenciales definidas en `.env`.
 
 ## Usuario Inicial
 
