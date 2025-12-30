@@ -43,7 +43,7 @@ def create_tag(
         )
     
     tag = tag_service.create_tag(tag_data)
-    return tag
+    return {"message": "Tag creado exitosamente", "tag": tag}
 
 
 @router.get(

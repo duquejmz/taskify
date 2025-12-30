@@ -63,7 +63,7 @@ def create_user(
         )
     
     user = user_service.create_user(user_data, role.id)
-    return user
+    return {"message": "Usuario creado exitosamente", "user": user}
 
 
 @router.get(
@@ -138,7 +138,7 @@ def deactivate_user(
             detail="Usuario no encontrado",
         )
     
-    return user
+    return {"message": "Usuario desactivado exitosamente", "user": user}
 
 
 @router.patch(
@@ -165,4 +165,4 @@ def activate_user(
             detail="Usuario no encontrado",
         )
     
-    return user
+    return {"message": "Usuario reactivado exitosamente", "user": user}

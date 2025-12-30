@@ -26,9 +26,9 @@ class TaskService:
             user_id=user_id,
         )
         
-        # Agregar tags si se proporcionaron
-        if task_data.tag_ids:
-            tags = self.db.query(Tag).filter(Tag.id.in_(task_data.tag_ids)).all()
+        # Agregar tags si se proporcionaron (por nombre)
+        if task_data.tag_names:
+            tags = self.db.query(Tag).filter(Tag.name.in_(task_data.tag_names)).all()
             task.tags = tags
         
         self.db.add(task)
@@ -90,8 +90,8 @@ class TaskService:
         update_data = task_data.model_dump(exclude_unset=True)
         
         for field, value in update_data.items():
-            if field == "tag_ids" and value is not None:
-                tags = self.db.query(Tag).filter(Tag.id.in_(value)).all()
+            if field == "tag_names" and value is not None:
+                tags = self.db.query(Tag).filter(Tag.name.in_(value)).all()
                 task.tags = tags
             elif field == "status" and value is not None:
                 setattr(task, field, TaskStatus(value))

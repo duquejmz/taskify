@@ -30,7 +30,7 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     """Schema para crear una tarea."""
-    tag_ids: Optional[List[UUID]] = Field(default_factory=list)
+    tag_names: Optional[List[str]] = Field(default=None, description="Lista de nombres de tags")
 
     model_config = {
         "json_schema_extra": {
@@ -39,7 +39,7 @@ class TaskCreate(TaskBase):
                 "description": "Agregar JWT al proyecto",
                 "status": "pending",
                 "priority": "high",
-                "tag_ids": []
+                "tag_names": ["backend", "urgente"]
             }
         }
     }
@@ -51,7 +51,7 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
-    tag_ids: Optional[List[UUID]] = None
+    tag_names: Optional[List[str]] = Field(default=None, description="Lista de nombres de tags")
 
 
 class TaskResponse(TaskBase):
