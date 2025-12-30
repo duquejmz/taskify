@@ -32,7 +32,7 @@ class Task(Base, AuditMixin):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     user = relationship("User", back_populates="tasks")
-    tags = relationship("Tag", secondary=task_tag, back_populates="tags", lazy="selectin")
+    tags = relationship("Tag", secondary=task_tag, back_populates="tasks", lazy="selectin")
 
 
 Index("idx_task_user_id_status", Task.user_id, Task.status)

@@ -61,7 +61,7 @@ def seed_initial_data(db: Session) -> None:
             name="Administrador",
             username="admin",
             email=admin_email,
-            password_hash=hash_password("Admin123*"),
+            password=hash_password("Admin123*"),
             role_id=roles["admin"].id,
             is_active=True,
         )

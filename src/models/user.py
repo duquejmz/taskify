@@ -42,7 +42,7 @@ class User(Base, AuditMixin):
         index=True
     )
 
-    password_hash = Column(
+    password = Column(
         String(255),
         nullable=False
     )
