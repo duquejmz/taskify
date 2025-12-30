@@ -13,40 +13,6 @@ API REST para gestión de tareas construida con FastAPI, SQLAlchemy y PostgreSQL
 - **JWT (python-jose)** - Autenticación basada en tokens
 - **Pydantic** - Validación de datos
 
-## 📁 Estructura del Proyecto
-
-```
-src/
-├── api/                  # Endpoints de la API
-│   ├── deps.py          # Dependencias (autenticación)
-│   ├── router.py        # Router principal
-│   └── routes/          # Rutas por módulo
-│       ├── auth.py      # Endpoints de autenticación
-│       └── task.py      # CRUD de tareas
-├── core/                 # Configuración y seguridad
-│   ├── config.py        # Variables de entorno
-│   └── security.py      # JWT y hash de contraseñas
-├── db/                   # Base de datos
-│   ├── base.py          # Base declarativa SQLAlchemy
-│   ├── session.py       # Sesión de BD
-│   └── seed.py          # Datos iniciales
-├── models/               # Modelos SQLAlchemy
-│   ├── user.py
-│   ├── task.py
-│   ├── role.py
-│   ├── permission.py
-│   ├── tag.py
-│   └── association.py   # Tablas intermedias M:N
-├── schemas/              # Esquemas Pydantic
-│   ├── auth.py
-│   ├── user.py
-│   └── task.py
-├── services/             # Lógica de negocio
-│   ├── auth_service.py
-│   └── task_service.py
-└── main.py               # Punto de entrada
-```
-
 ## ⚙️ Variables de Entorno
 
 Crear un archivo `.env` en la raíz del proyecto:
