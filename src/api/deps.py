@@ -60,6 +60,5 @@ def get_admin_user(
     return current_user
 
 
-# Tipo anotado para usar en las rutas
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(get_admin_user)]

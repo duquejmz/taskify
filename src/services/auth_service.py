@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -18,25 +18,29 @@ class AuthService:
         password: str,
         email: Optional[str] = None, 
         username: Optional[str] = None,
-    ) -> Optional[User]:
-        """Autentica un usuario por email o username y contraseña."""
+    ) -> Tuple[Optional[User], Optional[str]]:
+        """
+        Autentica un usuario por email o username y contraseña.
+        Retorna (user, error_message). Si user es None, error_message indica el problema.
+        """
+        if not email and not username:
+            return None, "Debe proporcionar email o nombre de usuario"
+        
         if email:
             user = self.db.query(User).filter(User.email == email).first()
-        elif username:
-            user = self.db.query(User).filter(User.username == username).first()
         else:
-            return None
+            user = self.db.query(User).filter(User.username == username).first()
         
         if not user:
-            return None
+            return None, "Credenciales inválidas"
         
         if not user.is_active:
-            return None
+            return None, "La cuenta de usuario está desactivada. Contacte al administrador"
         
         if not verify_password(password, user.password):
-            return None
+            return None, "Credenciales inválidas"
         
-        return user
+        return user, None
     
     def create_token_for_user(self, user: User) -> str:
         """Crea un token de acceso para el usuario."""

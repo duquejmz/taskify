@@ -34,12 +34,11 @@ def create_permission(
     """
     permission_service = get_permission_service(db)
     
-    # Verificar si ya existe
     existing = permission_service.get_permission_by_name(permission_data.name)
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El permiso '{permission_data.name}' ya existe",
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"El permiso '{permission_data.name}' ya existe en el sistema",
         )
     
     permission = permission_service.create_permission(permission_data, admin_user.id)

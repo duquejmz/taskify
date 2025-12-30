@@ -46,8 +46,8 @@ def create_role(
     existing = role_service.get_role_by_name(role_data.name)
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El rol '{role_data.name}' ya existe",
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"El rol '{role_data.name}' ya existe en el sistema",
         )
     
     role = role_service.create_role(role_data, admin_user.id)
@@ -142,8 +142,8 @@ def assign_permissions_to_role(
     missing = set(permissions_data.permission_names) - found_names
     if missing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Permisos no encontrados: {', '.join(missing)}",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Los siguientes permisos no existen: {', '.join(sorted(missing))}",
         )
     
     # Asignar permisos

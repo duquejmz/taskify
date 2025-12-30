@@ -5,7 +5,6 @@ from src.db.session import get_db
 from src.schemas.auth import LoginRequest, TokenResponse
 from src.services.auth_service import get_auth_service
 
-# Importar modelos para resolver relaciones
 from src.models.task import Task
 from src.models.tag import Tag
 from src.models.role import Role
@@ -36,16 +35,21 @@ def login(
     """
     auth_service = get_auth_service(db)
     
-    user = auth_service.authenticate_user(
+    user, error_message = auth_service.authenticate_user(
         email=login_data.email,
         username=login_data.username,
         password=login_data.password,
     )
     
     if not user:
+        # Determinar código de error basado en el mensaje
+        status_code = status.HTTP_401_UNAUTHORIZED
+        if error_message and "desactivada" in error_message:
+            status_code = status.HTTP_403_FORBIDDEN
+        
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas",
+            status_code=status_code,
+            detail=error_message or "Credenciales inválidas",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

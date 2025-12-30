@@ -43,15 +43,15 @@ def create_user(
     # Verificar que el email no existe
     if user_service.get_user_by_email(user_data.email):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El email ya está registrado",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El email ya está registrado en el sistema",
         )
     
     # Verificar que el username no existe
     if user_service.get_user_by_username(user_data.username):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El nombre de usuario ya está registrado",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El nombre de usuario ya está registrado en el sistema",
         )
     
     # Buscar el rol por nombre
@@ -126,8 +126,8 @@ def deactivate_user(
     # No permitir desactivarse a sí mismo
     if admin_user.id == user_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No puedes desactivarte a ti mismo",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No puedes desactivar tu propia cuenta de administrador",
         )
     
     user = user_service.deactivate_user(user_id, admin_user.id)

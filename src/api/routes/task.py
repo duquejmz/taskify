@@ -55,8 +55,8 @@ def list_tasks(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Número de página"),
     page_size: int = Query(10, ge=1, le=100, description="Tamaño de página"),
-    status: Optional[str] = Query(None, description="Filtrar por estado"),
-    priority: Optional[str] = Query(None, description="Filtrar por prioridad"),
+    task_status: Optional[str] = Query(None, alias="status", description="Filtrar por estado"),
+    task_priority: Optional[str] = Query(None, alias="priority", description="Filtrar por prioridad"),
 ):
     """
     Lista las tareas del usuario con paginación.
@@ -66,14 +66,30 @@ def list_tasks(
     - **status**: Filtrar por estado (pending, in_progress, completed)
     - **priority**: Filtrar por prioridad (low, medium, high)
     """
+    # Validar status si se proporciona
+    valid_statuses = ["pending", "in_progress", "completed"]
+    if task_status and task_status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Estado inválido. Valores permitidos: {', '.join(valid_statuses)}",
+        )
+    
+    # Validar priority si se proporciona
+    valid_priorities = ["low", "medium", "high"]
+    if task_priority and task_priority not in valid_priorities:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Prioridad inválida. Valores permitidos: {', '.join(valid_priorities)}",
+        )
+    
     task_service = get_task_service(db)
     
     tasks, total = task_service.get_tasks_paginated(
         user_id=current_user.id,
         page=page,
         page_size=page_size,
-        status=status,
-        priority=priority,
+        status=task_status,
+        priority=task_priority,
     )
     
     total_pages = task_service.calculate_total_pages(total, page_size)
