@@ -19,10 +19,12 @@ API REST para gestión de tareas construida con FastAPI, SQLAlchemy y PostgreSQL
 
 ```bash
 # Crear entorno virtual
-# Linux/Mac
 python -m venv venv
+
+# Activar entorno virtual
+# Para Linux/Mac
 source venv/bin/activate  
-# Windows:
+# Para Windows:
 venv\Scripts\activate
 
 # Instalar dependencias
