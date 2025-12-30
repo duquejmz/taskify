@@ -15,7 +15,7 @@ if config.config_file_name is not None:
 
 from src.db.base import Base  
 from src.models import task, tag, user, role, permission 
-from src.models.association import task_tag, permissions_role
+from src.models.association import task_tag, permission_role
 
 target_metadata = Base.metadata
 
