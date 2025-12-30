@@ -2,7 +2,7 @@
 
 API REST para gestión de tareas construida con FastAPI, SQLAlchemy y PostgreSQL.
 
-## 🚀 Tecnologías
+## Tecnologías
 
 - **Python 3.11+**
 - **FastAPI** - Framework web moderno y rápido
@@ -13,38 +13,7 @@ API REST para gestión de tareas construida con FastAPI, SQLAlchemy y PostgreSQL
 - **JWT (python-jose)** - Autenticación basada en tokens
 - **Pydantic** - Validación de datos
 
-## ⚙️ Variables de Entorno
-
-Crear un archivo `.env` en la raíz del proyecto:
-
-```env
-# Base de datos
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=technical_test
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/technical_test
-
-# JWT
-JWT_SECRET_KEY=tu-clave-secreta-muy-segura-cambiar-en-produccion
-JWT_ALGORITHM=HS256
-JWT_EXPIRATION_MINUTES=30
-```
-
-## 🐳 Levantar PostgreSQL con Docker
-
-```bash
-# Iniciar el contenedor de PostgreSQL
-docker-compose up -d
-
-# Verificar que está corriendo
-docker ps
-```
-
-El archivo `docker-compose.yml` configura PostgreSQL con las credenciales definidas en `.env`.
-
-## 🛠️ Instalación y Ejecución
+## Instalación y Ejecución
 
 ### 1. Clonar e instalar dependencias
 
@@ -74,7 +43,7 @@ python -m alembic upgrade head
 ### 4. Cargar datos iniciales (seed)
 
 ```bash
-python -c "from src.models.permission import Permission; from src.models.role import Role; from src.models.tag import Tag; from src.models.task import Task; from src.models.user import User; from src.db.session import SessionLocal; from src.db.seed import seed_initial_data; db = SessionLocal(); seed_initial_data(db); db.close(); print('Seed completado!')"
+python -c "from src.db.session import SessionLocal; from src.db.seed import seed_initial_data; db = SessionLocal(); seed_initial_data(db); db.close(); print('Seed completado!')"
 ```
 
 ### 5. Iniciar el servidor
@@ -88,42 +57,64 @@ La API estará disponible en: http://localhost:8000
 - Documentación Swagger: http://localhost:8000/docs
 - Documentación ReDoc: http://localhost:8000/redoc
 
-## 👤 Usuario Inicial
+
+
+## Variables de Entorno
+
+Crear un archivo `.env` en la raíz del proyecto:
+
+```env
+# Base de datos
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=technical_test
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/technical_test
+
+# JWT
+JWT_SECRET_KEY=tu-clave-secreta-muy-segura-cambiar-en-produccion
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_MINUTES=30
+```
+
+## Levantar PostgreSQL con Docker
+
+```bash
+# Iniciar el contenedor de PostgreSQL
+docker-compose up -d
+
+# Verificar que está corriendo
+docker ps
+```
+
+El archivo `docker-compose.yml` configura PostgreSQL con las credenciales definidas en `.env`.
+
+## Usuario Inicial
 
 El seed crea automáticamente un usuario administrador:
 
 | Campo | Valor |
 |-------|-------|
 | Email | `admin@test.com` |
-| Password | `Admin123*` |
+| Username | `admin` |
+| Password | `Admin123!` |
 | Rol | `admin` |
 
-## 📚 Endpoints de la API
+## Ejemplos de Uso
 
-### Autenticación
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/auth/login` | Iniciar sesión y obtener token JWT |
-
-### Tareas (requieren autenticación)
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/tasks` | Listar tareas (paginado) |
-| POST | `/tasks` | Crear nueva tarea |
-| GET | `/tasks/{id}` | Obtener tarea por ID |
-| PATCH | `/tasks/{id}` | Actualizar tarea |
-| DELETE | `/tasks/{id}` | Eliminar tarea |
-
-## 🧪 Ejemplos de Uso (curl)
-
-### Login
+### Login (por email o username)
 
 ```bash
-curl -X POST "http://localhost:8000/auth/login" \
+# Por email
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@test.com", "password": "Admin123*"}'
+  -d '{"identifier": "admin@test.com", "password": "Admin123!"}'
+
+# Por username
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"identifier": "admin", "password": "Admin123!"}'
 ```
 
 Respuesta:
@@ -134,57 +125,75 @@ Respuesta:
 }
 ```
 
-### Crear Tarea
+### Crear Tarea (con tags automáticos)
 
 ```bash
-curl -X POST "http://localhost:8000/tasks" \
+curl -X POST "http://localhost:8000/api/v1/tasks" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <tu_token>" \
   -d '{
     "title": "Mi primera tarea",
     "description": "Descripción de la tarea",
     "status": "pending",
-    "priority": "high"
+    "priority": "high",
+    "tag_names": ["backend", "urgente"]
   }'
 ```
 
-### Listar Tareas (paginado)
+> **Nota**: Si los tags no existen, se crean automáticamente.
+
+### Listar Tareas (con filtros)
 
 ```bash
-curl -X GET "http://localhost:8000/tasks?page=1&page_size=10" \
+# Paginación básica
+curl -X GET "http://localhost:8000/api/v1/tasks?page=1&page_size=10" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Con filtros
+curl -X GET "http://localhost:8000/api/v1/tasks?status=pending&priority=high" \
   -H "Authorization: Bearer <tu_token>"
 ```
 
-Respuesta:
-```json
-{
-  "items": [...],
-  "total": 1,
-  "page": 1,
-  "page_size": 10,
-  "total_pages": 1
-}
-```
-
-### Actualizar Tarea
+### Crear Usuario (Admin)
 
 ```bash
-curl -X PATCH "http://localhost:8000/tasks/<task_id>" \
+curl -X POST "http://localhost:8000/api/v1/users" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <tu_token>" \
-  -d '{"status": "completed"}'
+  -d '{
+    "name": "Juan Pérez",
+    "username": "juanperez",
+    "email": "juan@example.com",
+    "password": "Password123!",
+    "role_name": "user"
+  }'
 ```
 
-### Eliminar Tarea
+### Desactivar Usuario (Admin)
 
 ```bash
-curl -X DELETE "http://localhost:8000/tasks/<task_id>" \
+curl -X PATCH "http://localhost:8000/api/v1/users/<user_id>/deactivate" \
   -H "Authorization: Bearer <tu_token>"
 ```
 
-## 🗃️ Índices de Base de Datos
+## Modelo de Datos
 
-Se definieron índices en los siguientes campos para optimizar consultas frecuentes:
+### Relaciones
+
+- **User ↔ Role**: N:1 (cada usuario tiene un rol)
+- **User ↔ Task**: 1:N (un usuario tiene muchas tareas)
+- **Task ↔ Tag**: M:N (tabla intermedia `task_tag`)
+- **Role ↔ Permission**: M:N (tabla intermedia `permission_role`)
+
+### Campos de Auditoría
+
+Todos los modelos incluyen:
+- `created_at`: Fecha de creación
+- `created_by`: ID del usuario que creó el registro
+- `updated_at`: Fecha de última actualización
+- `updated_by`: ID del usuario que actualizó el registro
+
+## Índices de Base de Datos
 
 | Tabla | Índice | Justificación |
 |-------|--------|---------------|
@@ -192,33 +201,35 @@ Se definieron índices en los siguientes campos para optimizar consultas frecuen
 | `tasks` | `priority` | Filtrar por prioridad |
 | `tasks` | `created_at` | Ordenamiento por fecha |
 | `users` | `email` (unique) | Login por email |
-| `users` | `username` (unique) | Búsqueda por username |
+| `users` | `username` (unique) | Login por username |
 | `users` | `role_id` | Filtrar usuarios por rol |
+| `tags` | `name` (unique) | Búsqueda por nombre |
 
-## 🔒 Decisiones de Seguridad
+## Manejo de Errores HTTP
 
-1. **Argon2** para hash de contraseñas (recomendado sobre bcrypt por resistencia a ataques GPU)
+| Código | Descripción | Ejemplo |
+|--------|-------------|---------|
+| 400 | Bad Request | Datos de entrada mal formados |
+| 401 | Unauthorized | Token inválido, expirado o no proporcionado |
+| 403 | Forbidden | Usuario sin permisos de administrador |
+| 404 | Not Found | Recurso no encontrado |
+| 409 | Conflict | Email, username, tag o rol ya existe |
+| 422 | Unprocessable Entity | Validación de negocio fallida |
+
+## Decisiones de Seguridad
+
+1. **Argon2** para hash de contraseñas (resistente a ataques GPU)
 2. **JWT** con expiración configurable (default: 30 minutos)
-3. **Endpoints protegidos** - Todas las operaciones de tareas requieren autenticación
-4. **Validación Pydantic** - Todos los inputs son validados automáticamente
+3. **Endpoints protegidos** por rol (Usuario o Admin)
+4. **Validación Pydantic** en todos los inputs
+5. **Soft delete** para usuarios (desactivación en lugar de eliminación)
 
-## 📋 Manejo de Errores HTTP
+## Características Especiales
 
-| Código | Descripción |
-|--------|-------------|
-| 400 | Bad Request - Datos inválidos |
-| 401 | Unauthorized - Token inválido o expirado |
-| 404 | Not Found - Recurso no encontrado |
-| 422 | Unprocessable Entity - Error de validación |
-| 500 | Internal Server Error |
+1. **Login flexible**: Acepta email O username como identificador
+2. **Auto-creación de tags**: Al crear/actualizar tareas, los tags se crean si no existen
+3. **Filtrado de usuarios inactivos**: Por defecto, los endpoints de listado solo muestran usuarios activos
+4. **Paginación consistente**: Todos los endpoints de listado soportan `page` y `page_size`. Se implementa utilizando offset based.
+5. **Permisos**: Solo el administrador, puede realizar la mayoria de acciones de edición.
+6. **Campos de auditoria**: Implementar campos de auditoria para tner un mejor control de cuando y quien crea y poder filtrar por estos.
 
-## 🔧 Trade-offs y Decisiones
-
-1. **Identificación por email**: Se usa email para login (más común y user-friendly)
-2. **Paginación offset-based**: Simple de implementar, suficiente para datasets pequeños/medianos
-3. **Soft delete vs Hard delete**: Se implementó hard delete por simplicidad (en producción considerar soft delete)
-4. **Tareas por usuario**: Cada usuario solo ve sus propias tareas (multi-tenant simple)
-
-## 📝 Licencia
-
-MIT
