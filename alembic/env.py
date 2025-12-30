@@ -13,9 +13,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from app.db.base import Base  
-from app.models import task, tag, user, role, permission 
-from app.models.association import task_tag, permissions_role
+from src.db.base import Base  
+from src.models import task, tag, user, role, permission 
+from src.models.association import task_tag, permissions_role
 
 target_metadata = Base.metadata
 
