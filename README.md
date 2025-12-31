@@ -101,12 +101,12 @@ El seed crea automáticamente un usuario administrador:
 # Por email
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@test.com", "password": "Admin123!"}'
+  -d '{"email": "admin@test.com", "password": "Admin123*"}'
 
 # Por username
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "Admin123!"}'
+  -d '{"username": "admin", "password": "Admin123*"}'
 ```
 
 **Respuesta:**
@@ -520,17 +520,22 @@ Todos los modelos incluyen:
 
 ## Índices de Base de Datos
 
+Los índices fueron diseñados para optimizar las consultas más frecuentes de la aplicación, reduciendo el tiempo de respuesta y mejorando el rendimiento general del sistema.
+
+
 | Tabla | Índice | Justificación |
 |-------|--------|---------------|
-| `tasks` | `user_id + status` | Filtrar tareas por usuario y estado |
-| `tasks` | `priority` | Filtrar por prioridad |
-| `tasks` | `created_at` | Ordenamiento por fecha |
-| `users` | `email` (unique) | Login por email |
-| `users` | `username` (unique) | Login por username |
-| `users` | `role_id` | Filtrar usuarios por rol |
-| `tags` | `name` (unique) | Búsqueda por nombre |
+| `tasks` | `user_id + status` | Optimiza la consulta principal del dashboard: obtener tareas de un usuario filtradas por estado. Al ser un índice compuesto, evita escaneos completos de tabla cuando se aplican ambos filtros simultáneamente. |
+| `tasks` | `priority` | Acelera el filtrado por prioridad, consulta frecuente para mostrar tareas urgentes o de alta prioridad. |
+| `tasks` | `created_at` | Mejora el rendimiento del ordenamiento cronológico, operación común en listados paginados y reportes. |
+| `users` | `email` (unique) | Garantiza unicidad y optimiza la autenticación por email, operación ejecutada en cada login. |
+| `users` | `username` (unique) | Garantiza unicidad y optimiza la autenticación por username como método alternativo de login. |
+| `users` | `role_id` | Acelera las consultas de usuarios por rol, útil para la gestión administrativa y filtros de permisos. |
+| `tags` | `name` (unique) | Garantiza unicidad y optimiza la búsqueda de tags por nombre, operación frecuente al crear/editar tareas. |
+
 
 ## Manejo de Errores HTTP
+Se implementó un manejo de errores estandarizado siguiendo las convenciones HTTP REST. Esto permite a los clientes de la API identificar y manejar errores de forma predecible, reduciendo el tiempo de debugging y mejorando la experiencia del desarrollador.
 
 | Código | Descripción | Ejemplo |
 |--------|-------------|---------|
@@ -541,20 +546,32 @@ Todos los modelos incluyen:
 | 409 | Conflict | Email, username, tag o rol ya existe |
 | 422 | Unprocessable Entity | Validación de negocio fallida |
 
+**Nota**: La diferencia entre 400 y 422 es importante: 400 indica un problema de formato/sintaxis, mientras que 422 indica que los datos son válidos pero no cumplen las reglas de negocio (ej: intentar desactivar tu propia cuenta).
+
 ## Decisiones de Seguridad
 
-1. **Argon2** para hash de contraseñas (resistente a ataques GPU)
-2. **JWT** con expiración configurable (default: 30 minutos)
-3. **Endpoints protegidos** por rol (Usuario o Admin)
-4. **Validación Pydantic** en todos los inputs
-5. **Soft delete** para usuarios (desactivación en lugar de eliminación)
+Se priorizó la seguridad desde el diseño, implementando múltiples capas de protección para datos sensibles y acceso a recursos.
+
+| Medida | Implementación | Justificación |
+|--------|----------------|---------------|
+| **Hash de contraseñas** | Argon2 | Resistente a ataques de fuerza bruta con GPU/ASIC por su alto consumo de memoria. |
+| **Autenticación** | JWT con expiración | Tokens stateless que reducen carga en servidor. Expiración de 60 min limita ventana de ataque si un token es comprometido. |
+| **Autorización** | Roles (User/Admin) | Control de acceso basado en roles (RBAC) que simplifica la gestión de permisos y cumple el principio de mínimo privilegio. |
+| **Validación de entrada** | Pydantic | Validación estricta de tipos y formatos en cada request, previniendo inyecciones y datos malformados antes de llegar a la lógica de negocio. |
+| **Eliminación de usuarios** | Soft delete | Desactivación en lugar de eliminación física, preservando integridad referencial y permitiendo auditoría histórica. |
+| **Contraseñas seguras** | Validación de complejidad | Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial para prevenir contraseñas débiles. |
+
 
 ## Características Especiales
 
-1. **Login flexible**: Acepta email O username como identificador
-2. **Auto-creación de tags**: Al crear/actualizar tareas, los tags se crean si no existen
-3. **Filtrado de usuarios inactivos**: Por defecto, los endpoints de listado solo muestran usuarios activos
-4. **Paginación consistente**: Todos los endpoints de listado soportan `page` y `page_size`. Se implementa utilizando offset based.
-5. **Permisos**: Solo el administrador, puede realizar la mayoria de acciones de edición.
-6. **Campos de auditoria**: Implementar campos de auditoria para tner un mejor control de cuando y quien crea y poder filtrar por estos.
+Funcionalidades adicionales implementadas para mejorar la experiencia de desarrollo y uso de la API.
+
+| Característica | Descripción | Beneficio |
+|----------------|-------------|-----------|
+| **Login flexible** | Acepta email o username como identificador de autenticación | Mayor comodidad para el usuario, quien puede elegir su método preferido de acceso. |
+| **Auto-creación de tags** | Al crear o actualizar tareas, los tags inexistentes se crean automáticamente | Simplifica el flujo de trabajo eliminando la necesidad de crear tags previamente. |
+| **Filtrado de usuarios inactivos** | Los endpoints de listado muestran solo usuarios activos por defecto | Evita mostrar cuentas deshabilitadas, manteniendo listas limpias y relevantes. |
+| **Paginación consistente** | Todos los endpoints de listado soportan `page` y `page_size` usando offset-based pagination | Permite manejar grandes volúmenes de datos de forma eficiente y predecible. |
+| **Control de acceso por rol** | Solo administradores pueden gestionar usuarios, roles y permisos | Cumple el principio de mínimo privilegio, protegiendo operaciones sensibles. |
+| **Campos de auditoría** | Todos los modelos incluyen `created_at`, `created_by`, `updated_at` y `updated_by` | Trazabilidad completa de cambios para debugging, auditorías y cumplimiento normativo. |
 
