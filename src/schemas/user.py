@@ -1,8 +1,14 @@
+import re
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+PASSWORD_REGEX = re.compile(
+    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;':"",./<>?]).{8,}$"
+)
 
 
 class UserBase(BaseModel):
@@ -16,6 +22,17 @@ class UserCreate(UserBase):
     """Schema para crear un usuario."""
     password: str = Field(..., min_length=8, max_length=100)
     role_name: Optional[str] = Field(default="user", description="Nombre del rol (por defecto: user)")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """Valida que la contraseña cumpla con los requisitos de seguridad."""
+        if not PASSWORD_REGEX.match(v):
+            raise ValueError(
+                "La contraseña debe tener mínimo 8 caracteres, "
+                "una mayúscula, una minúscula, un número y un carácter especial"
+            )
+        return v
 
     model_config = {
         "json_schema_extra": {
