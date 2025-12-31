@@ -73,12 +73,12 @@ class User(Base, AuditMixin):
 
     def set_password(self, password: str) -> None:
         """Genera y guarda el hash de la contraseña."""
-        self.password_hash = hash_password(password)
+        self.password = hash_password(password)
 
     def verify_password(self, password: str) -> bool:
         """Verifica la contraseña contra el hash almacenado."""
-        return verify_password(password, self.password_hash)
-
+        return verify_password(password, self.password)
+    
     def deactivate(self) -> None:
         """Desactiva el usuario sin borrarlo."""
         self.is_active = False
