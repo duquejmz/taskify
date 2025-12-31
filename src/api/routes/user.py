@@ -106,63 +106,53 @@ def list_users(
 
 
 @router.patch(
-    "/{user_id}/deactivate",
+    "/{user_id}/status",
     response_model=UserResponse,
-    summary="Desactivar usuario",
-    description="Desactiva un usuario (soft delete). Solo administradores.",
+    summary="Cambiar estado de usuario",
+    description="Activa o desactiva un usuario. Solo administradores.",
 )
-def deactivate_user(
+def update_user_status(
     user_id: UUID,
+    is_active: bool,
     admin_user: AdminUser,
     db: Session = Depends(get_db),
 ):
     """
-    Desactiva un usuario (solo admin).
+    Cambia el estado activo/inactivo de un usuario (solo admin).
     
-    El usuario no será eliminado, solo marcado como inactivo.
+    - **is_active**: `true` para activar, `false` para desactivar
+    
+    El usuario no será eliminado, solo marcado como activo o inactivo.
     """
     user_service = get_user_service(db)
     
+    # Obtener el usuario
+    user = user_service.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado",
+        )
+    
     # No permitir desactivarse a sí mismo
-    if admin_user.id == user_id:
+    if not is_active and admin_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No puedes desactivar tu propia cuenta de administrador",
         )
     
-    user = user_service.deactivate_user(user_id, admin_user.id)
-    
-    if not user:
+    # Validar que el estado sea diferente al actual
+    if user.is_active == is_active:
+        status_text = "activo" if is_active else "inactivo"
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"El usuario ya se encuentra {status_text}",
         )
     
-    return user
-
-
-@router.patch(
-    "/{user_id}/activate",
-    response_model=UserResponse,
-    summary="Reactivar usuario",
-    description="Reactiva un usuario previamente desactivado. Solo administradores.",
-)
-def activate_user(
-    user_id: UUID,
-    admin_user: AdminUser,
-    db: Session = Depends(get_db),
-):
-    """
-    Reactiva un usuario (solo admin).
-    """
-    user_service = get_user_service(db)
+    # Actualizar estado
+    if is_active:
+        updated_user = user_service.activate_user(user_id, admin_user.id)
+    else:
+        updated_user = user_service.deactivate_user(user_id, admin_user.id)
     
-    user = user_service.activate_user(user_id, admin_user.id)
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado",
-        )
-    
-    return user
+    return updated_user
