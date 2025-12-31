@@ -50,7 +50,7 @@ pip install -r requirements.txt
 ### 2. Levantar la base de datos
 
 ```bash
-docker-compose up -d
+docker-compose up 
 ```
 
 ### 3. Ejecutar migraciones
