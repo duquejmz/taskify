@@ -50,7 +50,7 @@ pip install -r requirements.txt
 ### 2. Levantar la base de datos
 
 ```bash
-docker-compose up 
+docker compose up -d
 ```
 
 ### 3. Ejecutar migraciones
@@ -89,21 +89,27 @@ El seed crea automáticamente un usuario administrador:
 
 ## Ejemplos de Uso
 
+> **Nota**: Reemplaza `<tu_token>` con el token JWT obtenido del login.
+
+---
+
+## Autenticación
+
 ### Login (por email o username)
 
 ```bash
 # Por email
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"identifier": "admin@test.com", "password": "Admin123!"}'
+  -d '{"email": "admin@test.com", "password": "Admin123!"}'
 
 # Por username
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"identifier": "admin", "password": "Admin123!"}'
+  -d '{"username": "admin", "password": "Admin123!"}'
 ```
 
-Respuesta:
+**Respuesta:**
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -111,7 +117,11 @@ Respuesta:
 }
 ```
 
-### Crear Tarea (con tags automáticos)
+---
+
+## CRUD de Tareas
+
+### Crear Tarea
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/tasks" \
@@ -128,19 +138,86 @@ curl -X POST "http://localhost:8000/api/v1/tasks" \
 
 > **Nota**: Si los tags no existen, se crean automáticamente.
 
-### Listar Tareas (con filtros)
+**Valores permitidos:**
+- `status`: `pending`, `in_progress`, `completed`
+- `priority`: `low`, `medium`, `high`
+
+### Listar Tareas (con paginación y filtros)
 
 ```bash
 # Paginación básica
 curl -X GET "http://localhost:8000/api/v1/tasks?page=1&page_size=10" \
   -H "Authorization: Bearer <tu_token>"
 
-# Con filtros
-curl -X GET "http://localhost:8000/api/v1/tasks?status=pending&priority=high" \
+# Con filtros por estado
+curl -X GET "http://localhost:8000/api/v1/tasks?status=pending" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Con filtros por prioridad
+curl -X GET "http://localhost:8000/api/v1/tasks?priority=high" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Combinando filtros
+curl -X GET "http://localhost:8000/api/v1/tasks?status=pending&priority=high&page=1&page_size=5" \
   -H "Authorization: Bearer <tu_token>"
 ```
 
-### Crear Usuario (Admin)
+**Respuesta:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "title": "Mi tarea",
+      "description": "Descripción",
+      "status": "pending",
+      "priority": "high",
+      "tags": [{"id": "uuid", "name": "backend"}],
+      "created_at": "2025-12-30T10:00:00",
+      "updated_at": "2025-12-30T10:00:00"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 10,
+  "total_pages": 1
+}
+```
+
+### Obtener Tarea por ID
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/tasks/<task_id>" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+### Actualizar Tarea
+
+```bash
+curl -X PATCH "http://localhost:8000/api/v1/tasks/<task_id>" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "title": "Tarea actualizada",
+    "status": "in_progress",
+    "priority": "medium"
+  }'
+```
+
+> **Nota**: Solo se actualizan los campos proporcionados.
+
+### Eliminar Tarea
+
+```bash
+curl -X DELETE "http://localhost:8000/api/v1/tasks/<task_id>" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+---
+
+## CRUD de Usuarios (Solo Admin)
+
+### Crear Usuario
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/users" \
@@ -155,12 +232,274 @@ curl -X POST "http://localhost:8000/api/v1/users" \
   }'
 ```
 
-### Desactivar Usuario (Admin)
+### Listar Usuarios
 
 ```bash
-curl -X PATCH "http://localhost:8000/api/v1/users/<user_id>/deactivate" \
+# Listar usuarios activos (default)
+curl -X GET "http://localhost:8000/api/v1/users?page=1&page_size=10" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Listar usuarios inactivos
+curl -X GET "http://localhost:8000/api/v1/users?is_active=false" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Listar todos los usuarios (activos e inactivos)
+curl -X GET "http://localhost:8000/api/v1/users?is_active=" \
   -H "Authorization: Bearer <tu_token>"
 ```
+
+**Respuesta:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "name": "Admin User",
+      "username": "admin",
+      "email": "admin@test.com",
+      "is_active": true,
+      "role": {"id": "uuid", "name": "admin"},
+      "created_at": "2025-12-30T10:00:00"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 10,
+  "total_pages": 1
+}
+```
+
+### Cambiar Estado de Usuario (Activar/Desactivar)
+
+```bash
+# Desactivar usuario
+curl -X PATCH "http://localhost:8000/api/v1/users/<user_id>/status?is_active=false" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Activar usuario
+curl -X PATCH "http://localhost:8000/api/v1/users/<user_id>/status?is_active=true" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+> **Nota**: No puedes desactivar tu propia cuenta de administrador.
+
+---
+
+## CRUD de Roles (Solo Admin)
+
+### Crear Rol
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/roles" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "name": "moderator",
+    "description": "Rol de moderador con permisos limitados"
+  }'
+```
+
+### Listar Roles
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/roles" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+**Respuesta:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "name": "admin",
+      "description": "Administrador del sistema",
+      "created_at": "2025-12-30T10:00:00"
+    },
+    {
+      "id": "uuid",
+      "name": "user",
+      "description": "Usuario estándar",
+      "created_at": "2025-12-30T10:00:00"
+    }
+  ],
+  "total": 2
+}
+```
+
+### Obtener Rol con sus Permisos
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/roles/<role_id>" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+**Respuesta:**
+```json
+{
+  "id": "uuid",
+  "name": "admin",
+  "description": "Administrador del sistema",
+  "permissions": [
+    {"id": "uuid", "name": "create_user"},
+    {"id": "uuid", "name": "delete_user"}
+  ],
+  "created_at": "2025-12-30T10:00:00"
+}
+```
+
+### Actualizar Permisos de un Rol (Agregar/Quitar)
+
+```bash
+# Agregar permisos
+curl -X PATCH "http://localhost:8000/api/v1/roles/<role_id>/permissions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "add": ["create_task", "edit_task"]
+  }'
+
+# Quitar permisos
+curl -X PATCH "http://localhost:8000/api/v1/roles/<role_id>/permissions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "remove": ["delete_task"]
+  }'
+
+# Agregar y quitar en una sola petición
+curl -X PATCH "http://localhost:8000/api/v1/roles/<role_id>/permissions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "add": ["create_task", "update_task"],
+    "remove": ["delete_task"]
+  }'
+```
+
+> **Nota**: Se pueden enviar ambos campos (`add` y `remove`) o solo uno de ellos.
+
+### Obtener Usuarios por Rol
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/roles/admin/users?page=1&page_size=10" \
+  -H "Authorization: Bearer <tu_token>"
+
+# Filtrar por estado activo
+curl -X GET "http://localhost:8000/api/v1/roles/user/users?is_active=true" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+---
+
+## CRUD de Permisos (Solo Admin)
+
+### Crear Permiso
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/permissions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "name": "export_reports",
+    "description": "Permite exportar reportes del sistema"
+  }'
+```
+
+### Listar Permisos
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/permissions" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+**Respuesta:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "name": "create_task",
+      "description": "Permite crear tareas",
+      "created_at": "2025-12-30T10:00:00"
+    },
+    {
+      "id": "uuid",
+      "name": "delete_user",
+      "description": "Permite eliminar usuarios",
+      "created_at": "2025-12-30T10:00:00"
+    }
+  ],
+  "total": 2
+}
+```
+
+---
+
+## CRUD de Tags
+
+### Crear Tag (Solo Admin)
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/tags" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu_token>" \
+  -d '{
+    "name": "importante"
+  }'
+```
+
+### Listar Tags
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/tags" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+**Respuesta:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "name": "backend",
+      "created_at": "2025-12-30T10:00:00"
+    },
+    {
+      "id": "uuid",
+      "name": "urgente",
+      "created_at": "2025-12-30T10:00:00"
+    }
+  ],
+  "total": 2
+}
+```
+
+### Obtener Tareas por Tag
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/tags/backend/tasks" \
+  -H "Authorization: Bearer <tu_token>"
+```
+
+**Respuesta:**
+```json
+[
+  {
+    "id": "uuid",
+    "title": "Implementar API",
+    "description": "Crear endpoints REST",
+    "status": "in_progress",
+    "priority": "high",
+    "tags": [{"id": "uuid", "name": "backend"}],
+    "created_at": "2025-12-30T10:00:00"
+  }
+]
+```
+
+---
+
+
 
 ## Modelo de Datos
 
