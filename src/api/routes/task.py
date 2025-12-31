@@ -158,7 +158,7 @@ def update_task(
 
 @router.delete(
     "/{task_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     summary="Eliminar tarea",
     description="Elimina una tarea existente.",
 )
