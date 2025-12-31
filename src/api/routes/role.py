@@ -11,7 +11,7 @@ from src.schemas.role import (
     RoleResponse,
     RoleWithPermissionsResponse,
     RoleListResponse,
-    AssignPermissionsRequest,
+    UpdatePermissionsRequest,
 )
 from src.schemas.user import UserListResponse
 from src.services.role_service import get_role_service
@@ -102,27 +102,35 @@ def get_role_with_permissions(
     return role
 
 
-@router.post(
+@router.patch(
     "/{role_id}/permissions",
     response_model=RoleWithPermissionsResponse,
-    summary="Asignar permisos a rol",
-    description="Asigna permisos a un rol. Solo administradores.",
+    summary="Actualizar permisos de rol",
+    description="Agrega o quita permisos de un rol. Solo administradores.",
 )
-def assign_permissions_to_role(
+def update_role_permissions(
     role_id: UUID,
-    permissions_data: AssignPermissionsRequest,
+    permissions_data: UpdatePermissionsRequest,
     admin_user: AdminUser,
     db: Session = Depends(get_db),
 ):
     """
-    Asigna permisos a un rol (solo admin).
+    Actualiza los permisos de un rol (solo admin).
     
-    - **permission_names**: Lista de nombres de permisos a asignar
+    - **add**: Lista de nombres de permisos a agregar
+    - **remove**: Lista de nombres de permisos a quitar
     
-    Los permisos existentes serán reemplazados por los nuevos.
+    Se pueden enviar ambos campos o solo uno de ellos.
     """
     role_service = get_role_service(db)
     permission_service = get_permission_service(db)
+    
+    # Validar que al menos se proporcione una acción
+    if not permissions_data.add and not permissions_data.remove:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Debe proporcionar al menos permisos para agregar o quitar",
+        )
     
     # Verificar que el rol existe
     role = role_service.get_role_by_id(role_id)
@@ -132,22 +140,49 @@ def assign_permissions_to_role(
             detail="Rol no encontrado",
         )
     
-    # Obtener los permisos
-    permissions = permission_service.get_permissions_by_names(
-        permissions_data.permission_names
-    )
+    # Obtener permisos actuales del rol
+    current_permission_names = {p.name for p in role.permissions}
     
-    # Verificar que todos los permisos existen
-    found_names = {p.name for p in permissions}
-    missing = set(permissions_data.permission_names) - found_names
-    if missing:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Los siguientes permisos no existen: {', '.join(sorted(missing))}",
-        )
+    # Validar permisos a agregar
+    if permissions_data.add:
+        permissions_to_add = permission_service.get_permissions_by_names(permissions_data.add)
+        found_add_names = {p.name for p in permissions_to_add}
+        missing_add = set(permissions_data.add) - found_add_names
+        if missing_add:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Los siguientes permisos no existen: {', '.join(sorted(missing_add))}",
+            )
     
-    # Asignar permisos
-    updated_role = role_service.assign_permissions_to_role(role_id, permissions, admin_user.id)
+    # Validar permisos a quitar
+    if permissions_data.remove:
+        permissions_to_remove = permission_service.get_permissions_by_names(permissions_data.remove)
+        found_remove_names = {p.name for p in permissions_to_remove}
+        missing_remove = set(permissions_data.remove) - found_remove_names
+        if missing_remove:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Los siguientes permisos no existen: {', '.join(sorted(missing_remove))}",
+            )
+        
+        # Verificar que los permisos a quitar están asignados al rol
+        not_assigned = set(permissions_data.remove) - current_permission_names
+        if not_assigned:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Los siguientes permisos no están asignados al rol: {', '.join(sorted(not_assigned))}",
+            )
+    
+    # Calcular nuevos permisos
+    new_permission_names = current_permission_names.copy()
+    new_permission_names.update(permissions_data.add)
+    new_permission_names -= set(permissions_data.remove)
+    
+    # Obtener objetos de permisos finales
+    final_permissions = permission_service.get_permissions_by_names(list(new_permission_names))
+    
+    # Actualizar permisos
+    updated_role = role_service.assign_permissions_to_role(role_id, final_permissions, admin_user.id)
     return updated_role
 
 

@@ -46,18 +46,22 @@ class RoleListResponse(BaseModel):
     total: int
 
 
-class AssignPermissionsRequest(BaseModel):
-    """Schema para asignar permisos a un rol."""
-    permission_names: List[str] = Field(
-        ..., 
-        min_length=1,
-        description="Lista de nombres de permisos a asignar"
+class UpdatePermissionsRequest(BaseModel):
+    """Schema para actualizar permisos de un rol (agregar/quitar)."""
+    add: List[str] = Field(
+        default=[],
+        description="Lista de nombres de permisos a agregar"
+    )
+    remove: List[str] = Field(
+        default=[],
+        description="Lista de nombres de permisos a quitar"
     )
     
     model_config = {
         "json_schema_extra": {
             "example": {
-                "permission_names": ["create_task", "read_task", "update_task"]
+                "add": ["create_task", "update_task"],
+                "remove": ["delete_task"]
             }
         }
     }
