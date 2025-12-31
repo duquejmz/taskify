@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from src.models.user import User
 from src.models.role import Role
 from src.models.permission import Permission
+from src.models.task import Task 
+from src.models.tag import Tag 
 from src.core.security import hash_password
 
 
