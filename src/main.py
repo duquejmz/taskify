@@ -14,7 +14,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, summary="Página de inicio", tags=["Inicio"])
 def read_root():
     return f"""
     <!DOCTYPE html>
